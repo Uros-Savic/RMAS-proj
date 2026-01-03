@@ -46,7 +46,7 @@ class AuthRepositoryImpl : AuthRepository {
     override suspend fun signIn(email: String, password: String): Result<User> {
         return try {
             auth.signInWithEmailAndPassword(email, password).await()
-            val uid = auth.currentUser?.uid ?: throw Exception("Neuspešna prijava.")
+            val uid = auth.currentUser?.uid ?: throw Exception("Neuspesna prijava.")
 
             val userDocument = firestore.collection(USERS_COLLECTION).document(uid).get().await()
             val user = userDocument.toObject(User::class.java) ?: throw Exception("Korisnik nije pronadjen u bazi.")

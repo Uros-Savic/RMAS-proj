@@ -203,63 +203,6 @@ class FirebaseObjectRepository(
             Result.failure(e)
         }
     }
-     suspend fun getObjectInteractions(objectId: String): List<Interaction> {
-        return try {
-            val snapshot = firestore.collection("interactions")
-                .whereEqualTo("objectId", objectId)
-                .get()
-                .await()
-
-            snapshot.toObjects(Interaction::class.java)
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-     suspend fun hasUserInteracted(userId: String, objectId: String, type: String): Boolean {
-        return try {
-            val snapshot = firestore.collection("interactions")
-                .whereEqualTo("userId", userId)
-                .whereEqualTo("objectId", objectId)
-                .whereEqualTo("type", type)
-                .get()
-                .await()
-
-            !snapshot.isEmpty
-        } catch (e: Exception) {
-            false
-        }
-    }
-    suspend fun getUserInteractions(userId: String): List<Interaction> {
-        return try {
-            val snapshot = firestore.collection("interactions")
-                .whereEqualTo("userId", userId)
-                .get()
-                .await()
-
-            snapshot.toObjects(Interaction::class.java)
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-     suspend fun getInteractionStats(objectId: String): InteractionStats {
-        val interactions = getObjectInteractions(objectId)
-
-        val ratings = interactions.filter { it.type == Interaction.TYPE_RATING && it.rating > 0 }
-        val averageRating = if (ratings.isNotEmpty()) {
-            ratings.map { it.rating }.average()
-        } else {
-            0.0
-        }
-
-        return InteractionStats(
-            totalRatings = ratings.size,
-            averageRating = averageRating,
-            totalReports = interactions.count { it.type == Interaction.TYPE_REPORT },
-            totalLikes = interactions.count { it.type == Interaction.TYPE_LIKE },
-            lastInteraction = interactions.maxByOrNull { it.timestamp }?.timestamp ?: 0
-        )
-    }
 
     override fun getLeaderboard(): Flow<List<User>> = callbackFlow {
         val listener = firestore.collection("users")

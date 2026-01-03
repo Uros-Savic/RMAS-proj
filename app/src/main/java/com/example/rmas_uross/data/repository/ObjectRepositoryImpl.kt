@@ -58,6 +58,7 @@ class ObjectRepositoryImpl : ObjectRepository {
             Result.failure(e)
         }
     }
+
     override suspend fun addObjectWithPoints(authorId: String, obj: AppObject, imageUri: Uri?): Result<Unit> {
         return try {
             var imageUrl = ""
@@ -66,8 +67,6 @@ class ObjectRepositoryImpl : ObjectRepository {
             }
             val objectWithImage = obj.copy(imageUrl = imageUrl)
             objectsCollection.document(obj.id).set(objectWithImage).await()
-            updatePoints(authorId, 10)
-
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -156,12 +155,6 @@ class ObjectRepositoryImpl : ObjectRepository {
     override suspend fun addInteraction(interaction: Interaction): Result<Unit> {
         return try {
             interactionsCollection.document(interaction.id).set(interaction).await()
-            when (interaction.type) {
-                Interaction.TYPE_RATING -> updatePoints(interaction.userId, 20)
-                Interaction.TYPE_REPORT -> updatePoints(interaction.userId, 30)
-                else -> Result.success(Unit)
-            }
-
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

@@ -3,7 +3,6 @@ package com.example.rmas_uross.ui.pages.profile
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,7 +26,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -36,7 +34,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -97,18 +94,16 @@ fun ProfileScreen(
 
                 authViewModel.updateUserProfile(profileImageBase64 = base64Image) { success ->
                     if (success) {
-                        Log.d("ProfileScreen", "Profile image updated successfully")
                     } else {
-                        Log.e("ProfileScreen", "Failed to update profile image")
                     }
                 }
             } catch (e: Exception) {
-                Log.e("ProfileScreen", "Error loading image", e)
             }
         }
     }
 
     LaunchedEffect(Unit) {
+        authViewModel.fetchUserData(userData?.uid ?: "")
         authViewModel.clearErrorMessage()
     }
 
@@ -219,7 +214,7 @@ fun ProfileScreen(
                     )
 
                     Text(
-                        text = "@${userData?.username ?: "username"}",
+                        text = "@${userData?.username ?: ""}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -306,7 +301,7 @@ fun ProfileScreen(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "Lični podaci",
+                        text = "Licni podaci",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -324,11 +319,6 @@ fun ProfileScreen(
                         value = userData?.phoneNumber ?: "Nije postavljeno"
                     )
 
-                    ProfileInfoItem(
-                        icon = Icons.Default.Person,
-                        label = "Korisničko ime",
-                        value = userData?.username ?: "Nije postavljeno"
-                    )
                 }
             }
 
@@ -343,7 +333,7 @@ fun ProfileScreen(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Napredak do sledećeg nivoa",
+                            text = "Napredak do sledeceg nivoa",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(bottom = 8.dp)
@@ -353,7 +343,7 @@ fun ProfileScreen(
                         val experienceForNextLevel = user.getExperienceForNextLevel()
 
                         Text(
-                            text = "${user.experience} / $experienceForNextLevel XP",
+                            text = "${user.points} / $experienceForNextLevel XP",
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
@@ -395,7 +385,7 @@ fun ProfileScreen(
         AlertDialog(
             onDismissRequest = { showImageSourceDialog = false },
             title = { Text("Izaberite izvor slike") },
-            text = { Text("Odakle želite da dodate profilnu sliku?") },
+            text = { Text("Odakle zelite da dodate profilnu sliku?") },
             confirmButton = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -428,7 +418,7 @@ fun ProfileScreen(
                 TextButton(
                     onClick = { showImageSourceDialog = false }
                 ) {
-                    Text("Otkaži")
+                    Text("Otkazi")
                 }
             }
         )
@@ -438,7 +428,7 @@ fun ProfileScreen(
         AlertDialog(
             onDismissRequest = { showSignOutDialog = false },
             title = { Text("Odjava") },
-            text = { Text("Da li ste sigurni da želite da se odjavite?") },
+            text = { Text("Da li ste sigurni da zelite da se odjavite?") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -456,7 +446,7 @@ fun ProfileScreen(
                 TextButton(
                     onClick = { showSignOutDialog = false }
                 ) {
-                    Text("Otkaži")
+                    Text("Otkazi")
                 }
             }
         )
@@ -566,7 +556,6 @@ private fun correctImageRotation(bitmap: Bitmap, context: android.content.Contex
         }
         bitmap
     } catch (e: Exception) {
-        Log.e("ProfileScreen", "Error correcting image rotation", e)
         bitmap
     }
 }

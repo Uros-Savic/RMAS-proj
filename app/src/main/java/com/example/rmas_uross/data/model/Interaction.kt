@@ -4,7 +4,6 @@ data class Interaction(
     val id: String = "",
     val objectId: String = "",
     val userId: String = "",
-    val userName: String = "",
     val type: String = "",
     val rating: Int = 0,
     val state: String = "",
@@ -16,7 +15,5 @@ data class Interaction(
     companion object {
         const val TYPE_RATING = "RATING"
         const val TYPE_REPORT = "REPORT"
-        const val TYPE_LIKE = "LIKE"
-        const val TYPE_FAVORITE = "FAVORITE"
     }
 }

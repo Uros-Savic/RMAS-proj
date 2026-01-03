@@ -5,15 +5,20 @@ import androidx.lifecycle.viewModelScope
 import com.example.rmas_uross.data.model.AppObject
 import com.example.rmas_uross.data.model.MapFilters
 import com.example.rmas_uross.data.repository.ObjectRepository
+import com.example.rmas_uross.data.repository.PointsRepository
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 import kotlin.text.contains
 
 class MapViewModel(
-    private val objectRepository: ObjectRepository
+    private val objectRepository: ObjectRepository,
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val pointsRepository: PointsRepository = PointsRepository()
 ) : ViewModel() {
 
     private val _objects = MutableStateFlow<List<AppObject>>(emptyList())
@@ -51,7 +56,7 @@ class MapViewModel(
             } catch (e: Exception) {
                 _objects.value = emptyList()
                 _filteredObjects.value = emptyList()
-                _error.value = "Greška pri učitavanju objekata: ${e.message}"
+                _error.value = "Greska pri ucitavanju objekata: ${e.message}"
                 _isLoading.value = false
             }
         }
@@ -73,7 +78,6 @@ class MapViewModel(
                 userLng = lng
             )
         }
-        println("DEBUG: User location updated to ($lat, $lng)")
     }
 
     fun applyFilters(newFilters: MapFilters) {
@@ -84,21 +88,16 @@ class MapViewModel(
     private fun applyCurrentFilters() {
         val currentFilters = _filters.value
         val allObjects = _objects.value
-
-        println("DEBUG: Applying filters - types: ${currentFilters.objectTypes}, " +
-                "radius: ${currentFilters.radiusMeters}m, " +
-                "location: (${currentFilters.userLat}, ${currentFilters.userLng})")
-
         if (!currentFilters.isActive()) {
             _filteredObjects.value = allObjects
-            println("DEBUG: No active filters, showing all ${allObjects.size} objects")
             return
         }
 
         val filtered = allObjects.filter { objectItem ->
             val typeMatches = currentFilters.objectTypes.isEmpty() ||
                     currentFilters.objectTypes.contains(objectItem.type)
-
+            val stateMatches = currentFilters.states.isEmpty() ||
+                    currentFilters.states.contains(objectItem.state)
             val radiusMatches = if (currentFilters.userLat != null &&
                 currentFilters.userLng != null &&
                 currentFilters.radiusMeters > 0) {
@@ -109,11 +108,7 @@ class MapViewModel(
                     objectItem.longitude
                 )
                 val matches = distance <= currentFilters.radiusMeters
-                if (matches) {
-                    println("DEBUG: ✅ Object '${objectItem.name}' within radius: ${distance.toInt()}m <= ${currentFilters.radiusMeters.toInt()}m")
-                } else {
-                    println("DEBUG: ❌ Object '${objectItem.name}' outside radius: ${distance.toInt()}m > ${currentFilters.radiusMeters.toInt()}m")
-                }
+
                 matches
             } else {
                 true
@@ -122,11 +117,10 @@ class MapViewModel(
             val searchMatches = currentFilters.searchQuery.isBlank() ||
                     objectItem.name.contains(currentFilters.searchQuery, ignoreCase = true)
 
-            val result = typeMatches && radiusMatches && searchMatches
+            val result = typeMatches && stateMatches && radiusMatches && searchMatches
             result
         }
 
-        println("DEBUG: Filter result: ${filtered.size} objects out of ${allObjects.size}")
         _filteredObjects.value = filtered
     }
 
@@ -140,7 +134,6 @@ class MapViewModel(
 
         val newFilters = currentFilters.copy(objectTypes = newObjectTypes)
         applyFilters(newFilters)
-        println("DEBUG: Bench filter toggled - active: ${newObjectTypes.contains("BENCH")}")
     }
 
     fun toggleFountainFilter() {
@@ -153,44 +146,71 @@ class MapViewModel(
 
         val newFilters = currentFilters.copy(objectTypes = newObjectTypes)
         applyFilters(newFilters)
-        println("DEBUG: Fountain filter toggled - active: ${newObjectTypes.contains("FOUNTAIN")}")
     }
 
     fun clearAllFilters() {
         _filters.value = MapFilters()
         _filteredObjects.value = _objects.value
-        println("DEBUG: All filters cleared completely")
     }
 
     fun addNewMarker(position: LatLng, name: String, type: String) {
+        val userId = auth.currentUser?.uid
+
+        if (userId == null) {
+            _error.value = "Morate biti prijavljeni da biste dodali objekat"
+            return
+        }
+
         viewModelScope.launch {
             try {
-                val temporaryUserId by lazy {
-                    "user_${System.currentTimeMillis()}"
-                }
+                val objectId = UUID.randomUUID().toString()
+
                 val newObject = AppObject(
-                    id = System.currentTimeMillis().toString(),
+                    id = objectId,
                     name = name,
                     type = type,
                     state = "WORKING",
                     latitude = position.latitude,
                     longitude = position.longitude,
-                    description = "Novi dodat objekat",
+                    description = "Dodat sa mape",
                     timestamp = System.currentTimeMillis(),
-                    userId = temporaryUserId
+                    userId = userId,
+                    imageUrl = ""
                 )
                 val result = objectRepository.addObject(newObject)
-                if (result.isSuccess) {
-                    println("DEBUG: New marker added successfully: $name ($type)")
-                    refreshData()
-                } else {
-                    _error.value = "Greška pri dodavanju markera: ${result.exceptionOrNull()?.message}"
+
+                if (result.isFailure) {
+                    val error = result.exceptionOrNull()
+                    _error.value = "Greska pri dodavanju: ${error?.message}"
+                    return@launch
                 }
+
+                val pointsResult = pointsRepository.awardPoints(
+                    userId = userId,
+                    actionType = "ADD_OBJECT",
+                    targetId = objectId,
+                    metadata = mapOf(
+                        "type" to type,
+                        "hasImage" to false
+                    )
+                )
+
+                if (pointsResult.isSuccess) {
+                    val awarded = pointsResult.getOrNull() ?: 0
+                    _error.value = "Marker dodat! +$awarded poena"
+                } else {
+                    val error = pointsResult.exceptionOrNull()
+                    _error.value = "Marker dodat, ali poeni nisu dodeljeni"
+                }
+                refreshData()
+
             } catch (e: Exception) {
-                _error.value = "Greška pri dodavanju markera: ${e.message}"
+                e.printStackTrace()
+                _error.value = "Greska: ${e.message}"
             }
         }
     }
+
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val earthRadius = 6371000.0
 
@@ -209,7 +229,6 @@ class MapViewModel(
     fun clearFilters() {
         _filters.value = MapFilters()
         _filteredObjects.value = _objects.value
-        println("DEBUG: All filters cleared")
     }
 
     fun setRadiusFilter(radiusMeters: Double) {
@@ -220,10 +239,13 @@ class MapViewModel(
             userLng = currentLocation?.second
         )
         applyFilters(newFilters)
-        println("DEBUG: Radius filter set to ${radiusMeters.toInt()}m")
     }
 
     fun refreshData() {
         loadAllObjects()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
     }
 }

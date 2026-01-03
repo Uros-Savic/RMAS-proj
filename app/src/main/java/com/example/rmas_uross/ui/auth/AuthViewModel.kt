@@ -1,7 +1,5 @@
 package com.example.rmas_uross.ui.auth
 
-import android.graphics.Bitmap
-import android.util.Base64
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,7 +12,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.io.ByteArrayOutputStream
 
 class AuthViewModel : ViewModel() {
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -65,25 +62,21 @@ class AuthViewModel : ViewModel() {
                 _isLoading.value = true
                 _errorMessage.value = null
 
-                Log.d("AuthViewModel", "Starting sign up process...")
-
                 val authResult = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
                 val user = authResult.user
 
                 if (user == null) {
-                    _errorMessage.value = "Greška pri kreiranju naloga"
+                    _errorMessage.value = "Greska pri kreiranju naloga"
                     onComplete(false)
                     return@launch
                 }
 
-                Log.d("AuthViewModel", "Firebase user created: ${user.uid}")
 
                 val profileUpdates = UserProfileChangeRequest.Builder()
                     .setDisplayName(fullName)
                     .build()
 
                 user.updateProfile(profileUpdates).await()
-                Log.d("AuthViewModel", "Firebase profile updated")
 
                 val newUser = User(
                     uid = user.uid,
@@ -94,35 +87,31 @@ class AuthViewModel : ViewModel() {
                     profileImageUrl = "", // za brisanje kad me ne mrzi
                     profileImageBase64 = profileImageBase64 ?: "",
                     points = 0,
-                    level = 1,
                     createdAt = System.currentTimeMillis(),
                     lastLogin = System.currentTimeMillis()
                 )
 
                 usersCollection.document(user.uid).set(newUser).await()
-                Log.d("AuthViewModel", "User data saved to Firestore")
 
                 _currentUser.value = user
                 _userData.value = newUser
                 _isLoading.value = false
 
-                Log.d("AuthViewModel", "Sign up completed successfully")
                 onComplete(true)
 
             } catch (e: Exception) {
                 _isLoading.value = false
-                Log.e("AuthViewModel", "Sign up error: ${e.message}", e)
 
                 _errorMessage.value = when {
                     e.message?.contains("email address is already in use") == true ->
-                        "Email adresa je već u upotrebi"
+                        "Email adresa je vec u upotrebi"
                     e.message?.contains("password is weak") == true ->
-                        "Lozinka je previše slaba"
+                        "Lozinka je previse slaba"
                     e.message?.contains("invalid email") == true ->
                         "Nevalidna email adresa"
                     e.message?.contains("network error") == true ->
-                        "Problem sa mrežom. Proverite internet konekciju"
-                    else -> "Greška pri registraciji: ${e.message ?: "Nepoznata greška"}"
+                        "Problem sa mrezom. Proverite internet konekciju"
+                    else -> "Greska pri registraciji: ${e.message ?: "Nepoznata greska"}"
                 }
                 onComplete(false)
             }
@@ -147,7 +136,7 @@ class AuthViewModel : ViewModel() {
                     _isLoading.value = false
                     onComplete(true)
                 } else {
-                    _errorMessage.value = "Greška pri prijavi"
+                    _errorMessage.value = "Greska pri prijavi"
                     _isLoading.value = false
                     onComplete(false)
                 }
@@ -155,30 +144,27 @@ class AuthViewModel : ViewModel() {
                 _isLoading.value = false
                 _errorMessage.value = when {
                     e.message?.contains("invalid credential") == true ->
-                        "Pogrešan email ili lozinka"
+                        "Pogresan email ili lozinka"
                     e.message?.contains("user not found") == true ->
                         "Korisnik sa ovim email-om ne postoji"
                     e.message?.contains("network error") == true ->
-                        "Problem sa mrežom. Proverite internet konekciju"
-                    else -> "Greška pri prijavi: ${e.message}"
+                        "Problem sa mrezom. Proverite internet konekciju"
+                    else -> "Greska pri prijavi: ${e.message}"
                 }
                 onComplete(false)
             }
         }
     }
 
-    private suspend fun fetchUserData(userId: String) {
+    suspend fun fetchUserData(userId: String) {
         try {
             val document = usersCollection.document(userId).get().await()
             if (document.exists()) {
                 val user = document.toObject(User::class.java)
                 _userData.value = user
-                Log.d("AuthViewModel", "User data fetched: ${user?.username}")
             } else {
-                Log.d("AuthViewModel", "User document does not exist for: $userId")
             }
         } catch (e: Exception) {
-            Log.e("AuthViewModel", "Error fetching user data: ${e.message}")
         }
     }
 
@@ -228,7 +214,7 @@ class AuthViewModel : ViewModel() {
 
             } catch (e: Exception) {
                 _isLoading.value = false
-                _errorMessage.value = "Greška pri ažuriranju profila: ${e.message}"
+                _errorMessage.value = "Greska pri azuriranju profila: ${e.message}"
                 onComplete(false)
             }
         }

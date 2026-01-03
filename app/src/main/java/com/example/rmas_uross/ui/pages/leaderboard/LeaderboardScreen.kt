@@ -19,14 +19,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.rmas_uross.ui.components.BrandTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LeaderboardScreen(
-    viewModel: LeaderboardViewModel,
-    onBack: () -> Unit = {}
-) {
+    viewModel: LeaderboardViewModel)
+{
     LaunchedEffect(Unit) {
         viewModel.loadLeaderboard()
     }
@@ -37,18 +35,14 @@ fun LeaderboardScreen(
 
     Scaffold(
         topBar = {
-            BrandTopBar(
-                appName = "Rang lista",
-                showBack = true,
-                onBack = onBack
-            )
+
         },
         floatingActionButton = {
             if (error != null || leaderboard.isNotEmpty()) {
                 ExtendedFloatingActionButton(
                     onClick = { viewModel.refreshLeaderboard() },
-                    icon = { Icon(Icons.Default.Refresh, "Osveži") },
-                    text = { Text("Osveži") },
+                    icon = { Icon(Icons.Default.Refresh, "Osvezi") },
+                    text = { Text("Osvezi") },
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -71,7 +65,7 @@ fun LeaderboardScreen(
                         ) {
                             CircularProgressIndicator()
                             Text(
-                                text = "Učitavanje rang liste...",
+                                text = "Ucitavanje rang liste...",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -88,7 +82,7 @@ fun LeaderboardScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Error,
-                                contentDescription = "Greška",
+                                contentDescription = "Greska",
                                 modifier = Modifier.size(64.dp),
                                 tint = MaterialTheme.colorScheme.error
                             )
@@ -99,7 +93,7 @@ fun LeaderboardScreen(
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                             Button(onClick = { viewModel.refreshLeaderboard() }) {
-                                Text("Pokušaj ponovo")
+                                Text("Pokusaj ponovo")
                             }
                         }
                     }
@@ -124,7 +118,7 @@ fun LeaderboardScreen(
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                text = "Budite prvi koji će dodati objekat i osvojiti poene!",
+                                text = "Budite prvi koji ce dodati objekat i osvojiti poene!",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -322,12 +316,6 @@ fun LeaderboardItem(user: LeaderboardUser, position: Int) {
                         )
                     }
 
-                    Text(
-                        text = user.rank,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
                 }
             }
 

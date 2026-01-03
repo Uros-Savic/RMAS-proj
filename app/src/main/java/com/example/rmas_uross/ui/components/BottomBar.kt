@@ -18,7 +18,7 @@ data class BottomNavigationItem(
 )
 
 val bottomNavItems = listOf(
-    BottomNavigationItem(Route.home, Icons.Filled.Home, "Početna"),
+    BottomNavigationItem(Route.home, Icons.Filled.Home, "Pocetna"),
     BottomNavigationItem(Route.map, Icons.Filled.Place, "Mapa"),
     BottomNavigationItem(Route.leaderboard, Icons.Filled.AccountBox, "Rang Lista"),
     BottomNavigationItem(Route.profile, Icons.Filled.Person, "Profil"),

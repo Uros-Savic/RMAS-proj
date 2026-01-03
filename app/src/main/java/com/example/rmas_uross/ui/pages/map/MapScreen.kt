@@ -17,22 +17,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import androidx.navigation.NavController
 import com.example.rmas_uross.data.model.AppObject
-import com.example.rmas_uross.data.model.MapFilters
 import com.example.rmas_uross.location.LocationService
-import com.example.rmas_uross.ui.components.BrandTopBar
+import com.example.rmas_uross.worker.LocationTrackingService
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.Circle
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -41,12 +38,13 @@ fun MapScreen(
     viewModel: MapViewModel,
     onBack: () -> Unit,
     onObjectSelected: (String) -> Unit,
-    locationService: LocationService
+    locationService: LocationService,
+    currentUserId: String = ""
 ) {
+    val context = LocalContext.current
     val objects by viewModel.filteredObjects.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val filters by viewModel.filters.collectAsState()
-    val error by viewModel.error.collectAsState()
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
     var showFilters by remember { mutableStateOf(false) }
     var showObjectsList by remember { mutableStateOf(false) }
@@ -64,16 +62,15 @@ fun MapScreen(
         }
     }
     LaunchedEffect(Unit) {
+        LocationTrackingService.startService(context, currentUserId)
         try {
             locationService.locationFlow.collect { location ->
                 userLocation = location
                 viewModel.updateUserLocation(location.latitude, location.longitude)
-                println("DEBUG: Real user location updated: $location")
                 locationError = null
             }
         } catch (e: Exception) {
-            locationError = "Greška pri praćenju lokacije: ${e.message}"
-            println("DEBUG: Location flow error: ${e.message}")
+            locationError = "Greska pri pracenju lokacije: ${e.message}"
 
             try {
                 val currentLocation = locationService.getCurrentLocation()
@@ -81,18 +78,41 @@ fun MapScreen(
                     val latLng = LatLng(location.latitude, location.longitude)
                     userLocation = latLng
                     viewModel.updateUserLocation(location.latitude, location.longitude)
-                    println("DEBUG: Got single location: $latLng")
                 }
             } catch (e2: Exception) {
                 val defaultLocation = LatLng(44.7866, 20.4489)
                 userLocation = defaultLocation
                 viewModel.updateUserLocation(defaultLocation.latitude, defaultLocation.longitude)
-                println("DEBUG: Using default location: $defaultLocation")
             }
         }
     }
 
-    LaunchedEffect(userLocation, selectedObject) {
+    LaunchedEffect(Unit) {
+        try {
+            locationService.locationFlow.collect { location ->
+                userLocation = location
+                viewModel.updateUserLocation(location.latitude, location.longitude)
+                locationError = null
+            }
+        } catch (e: Exception) {
+            locationError = "Greska pri pracenju lokacije: ${e.message}"
+
+            try {
+                val currentLocation = locationService.getCurrentLocation()
+                currentLocation?.let { location ->
+                    val latLng = LatLng(location.latitude, location.longitude)
+                    userLocation = latLng
+                    viewModel.updateUserLocation(location.latitude, location.longitude)
+                }
+            } catch (e2: Exception) {
+                val defaultLocation = LatLng(44.7866, 20.4489)
+                userLocation = defaultLocation
+                viewModel.updateUserLocation(defaultLocation.latitude, defaultLocation.longitude)
+            }
+        }
+    }
+
+    LaunchedEffect(userLocation) {
         if (userLocation != null && !hasInitialZoomOccurred) {
             cameraPositionState.animate(
                 CameraUpdateFactory.newCameraPosition(
@@ -101,8 +121,10 @@ fun MapScreen(
                 1000
             )
             hasInitialZoomOccurred = true
-            println("DEBUG: Initial zoom to user location: $userLocation")
         }
+    }
+
+    LaunchedEffect(selectedObject) {
         selectedObject?.let { obj ->
             val position = LatLng(obj.latitude, obj.longitude)
             cameraPositionState.animate(
@@ -111,17 +133,11 @@ fun MapScreen(
                 ),
                 1000
             )
-            println("DEBUG: Zooming to object: ${obj.name} at ($position)")
         }
     }
 
     Scaffold(
         topBar = {
-            BrandTopBar(
-                appName = "Mapa",
-                showBack = true,
-                onBack = onBack
-            )
         },
         floatingActionButton = {
             Column(
@@ -137,7 +153,7 @@ fun MapScreen(
                         modifier = Modifier.size(40.dp),
                         containerColor = MaterialTheme.colorScheme.errorContainer
                     ) {
-                        Icon(Icons.Default.Clear, contentDescription = "Obriši sve filtere")
+                        Icon(Icons.Default.Clear, contentDescription = "Obrisi sve filtere")
                     }
                 }
                 FloatingActionButton(
@@ -194,7 +210,7 @@ fun MapScreen(
                         MaterialTheme.colorScheme.secondaryContainer
                     }
                 ) {
-                    Icon(Icons.Default.WaterDrop, contentDescription = "Česme")
+                    Icon(Icons.Default.WaterDrop, contentDescription = "Cesme")
                 }
                 FloatingActionButton(
                     onClick = {
@@ -280,7 +296,7 @@ fun MapScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Kliknite na mapu gde želite da dodate marker",
+                        text = "Kliknite na mapu gde zelite da dodate marker",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -364,7 +380,7 @@ fun MapScreen(
                         filters.objectTypes.forEach { type ->
                             when (type) {
                                 "BENCH" -> append("Klupe ")
-                                "FOUNTAIN" -> append("Česme ")
+                                "FOUNTAIN" -> append("Cesme ")
                                 else -> append("$type ")
                             }
                         }
@@ -674,7 +690,7 @@ fun FilterPanel(
                         Text(
                             when (type) {
                                 "BENCH" -> "Klupe"
-                                "FOUNTAIN" -> "Česme"
+                                "FOUNTAIN" -> "Cesme"
                                 else -> type
                             },
                             modifier = Modifier.padding(start = 8.dp)
@@ -687,7 +703,7 @@ fun FilterPanel(
                 Text("Stanje objekata:", style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                val states = listOf("WORKING", "BROKEN", "DAMAGED", "MISSING", "MAINTENANCE")
+                val states = listOf("WORKING", "DAMAGED", "BROKEN")
                 states.forEach { state ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
@@ -703,10 +719,8 @@ fun FilterPanel(
                         Text(
                             when (state) {
                                 "WORKING" -> "Ispravno"
-                                "BROKEN" -> "Neispravno"
-                                "DAMAGED" -> "Oštećeno"
-                                "MISSING" -> "Nedostaje"
-                                "MAINTENANCE" -> "Održavanje"
+                                "DAMAGED" -> "Delimicno osteceno"
+                                "BROKEN" -> "Neupotrebljivo"
                                 else -> state
                             },
                             modifier = Modifier.padding(start = 8.dp)
@@ -745,7 +759,7 @@ fun FilterPanel(
         dismissButton = {
             Column {
                 TextButton(onClick = onClear) {
-                    Text("Obriši sve filtere")
+                    Text("Obrisi sve filtere")
                 }
                 TextButton(onClick = onClose) {
                     Text("Zatvori")
@@ -806,7 +820,7 @@ fun AddMarkerDialog(
                         Text(
                             text = when (type) {
                                 "BENCH" -> "Klupa"
-                                "FOUNTAIN" -> "Česma"
+                                "FOUNTAIN" -> "Cesma"
                                 else -> type
                             },
                             modifier = Modifier.padding(start = 8.dp),
@@ -828,7 +842,7 @@ fun AddMarkerDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Otkaži")
+                Text("Otkazi")
             }
         }
     )

@@ -2,7 +2,6 @@ package com.example.rmas_uross.util
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -37,7 +36,6 @@ fun rememberImagePickerController(
                 onImageSelected(uri)
             }
         } else {
-            Log.e("ImagePicker", "Camera capture failed")
             onImageSelected(null)
         }
     }
@@ -62,7 +60,6 @@ class ImagePickerController(
         try {
             galleryLauncher.launch("image/*")
         } catch (e: Exception) {
-            Log.e("ImagePicker", "Gallery launch failed", e)
         }
     }
 
@@ -88,7 +85,6 @@ class ImagePickerController(
 
             cameraLauncher.launch(imageUri)
         } catch (e: Exception) {
-            Log.e("ImagePicker", "Camera launch failed", e)
         }
     }
 }

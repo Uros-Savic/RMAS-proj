@@ -7,9 +7,7 @@ object Route {
     const val map = "map"
     const val leaderboard = "leaderboard"
     const val profile = "profile"
-    const val createObject = "create_object"
     const val objectDetails = "object_details/{objectId}"
-    const val addObject = "add_object/{lat}/{lon}"
 
     fun objectDetailsRoute(objectId: String): String = "object_details/$objectId"
 }

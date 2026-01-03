@@ -1,10 +1,8 @@
 package com.example.rmas_uross.ui.pages.objectdetails
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Star
@@ -14,16 +12,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
 import com.example.rmas_uross.data.model.AppObject
 import com.example.rmas_uross.data.model.Interaction
 import com.example.rmas_uross.data.repository.ObjectRepository
-import com.example.rmas_uross.ui.components.BrandTopBar
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -53,10 +48,10 @@ fun ObjectDetailsScreen(
                 if (result.isSuccess) {
                     objectData = result.getOrNull()
                 } else {
-                    error = "Objekat nije pronađen"
+                    error = "Objekat nije pronadjen"
                 }
             } catch (e: Exception) {
-                error = "Greška pri učitavanju: ${e.message}"
+                error = "Greska pri ucitavanju: ${e.message}"
             } finally {
                 isLoading = false
             }
@@ -104,7 +99,7 @@ fun ObjectDetailsScreen(
                         currentUserId = currentUserId
                     )
                     snackbarHostState.showSnackbar(
-                        message = "Problem '$problemType' je uspešno zabeležen. Osvojili ste 30 poena!",
+                        message = "Problem '$problemType' je uspesno zabelezen. Osvojili ste 30 poena!",
                         withDismissAction = true
                     )
                 }
@@ -116,10 +111,21 @@ fun ObjectDetailsScreen(
 
     Scaffold(
         topBar = {
-            BrandTopBar(
-                appName = "Detalji objekta",
-                showBack = true,
-                onBack = onBack
+            TopAppBar(
+                title = { Text("Opis objekta") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Nazad"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -149,7 +155,7 @@ fun ObjectDetailsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Warning,
-                                contentDescription = "Greška",
+                                contentDescription = "Greska",
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(64.dp)
                             )
@@ -190,42 +196,6 @@ fun ObjectDetailsContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            if (appObject.imageUrl.isNotEmpty()) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                ) {
-                    Image(
-                        painter = rememberAsyncImagePainter(model = appObject.imageUrl),
-                        contentDescription = "Slika objekta",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = "Nema slike",
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
 
         item {
             Card(
@@ -253,7 +223,12 @@ fun ObjectDetailsContent(
                         InfoRow(
                             icon = Icons.Default.Warning,
                             label = "Stanje",
-                            value = appObject.state
+                            value = when (appObject.state.uppercase()) {
+                                "WORKING" -> "Ispravno"
+                                "PARTIALLY_DAMAGED" -> "Delimicno osteceno"
+                                "BROKEN" -> "Neupotrebljivo"
+                                else -> appObject.state
+                            }
                         )
                     }
                 }
@@ -277,13 +252,13 @@ fun ObjectDetailsContent(
 
                     InfoRow(
                         icon = Icons.Default.LocationOn,
-                        label = "Geografska širina",
+                        label = "Geografska sirina",
                         value = "%.6f".format(appObject.latitude)
                     )
 
                     InfoRow(
                         icon = Icons.Default.LocationOn,
-                        label = "Geografska dužina",
+                        label = "Geografska duzina",
                         value = "%.6f".format(appObject.longitude)
                     )
                 }
@@ -315,7 +290,7 @@ fun ObjectDetailsContent(
 
                     InfoRow(
                         icon = Icons.Default.Update,
-                        label = "Zadnje ažurirano",
+                        label = "Zadnje azurirano",
                         value = formatTimestamp(lastUpdatedTime)
                     )
                     InfoRow(
@@ -411,24 +386,26 @@ fun RatingDialog(
                     Text("Stanje objekta:", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     val states = listOf(
-                        "Ispravno" to Icons.Default.CheckCircle,
-                        "Delimično oštećeno" to Icons.Default.Build,
-                        "Neupotrebljivo" to Icons.Default.Warning
+                        "WORKING" to ("Ispravno" to Icons.Default.CheckCircle),
+                        "PARTIALLY_DAMAGED" to ("Delimicno osteceno" to Icons.Default.Build),
+                        "BROKEN" to ("Neupotrebljivo" to Icons.Default.Warning)
                     )
-                    states.forEach { (state, icon) ->
+                    states.forEach { (stateKey, pair) ->
+                        val (displayName, icon) = pair
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .clickable { selectedState = stateKey }
                                 .padding(vertical = 4.dp)
                         ) {
                             RadioButton(
-                                selected = selectedState == state,
-                                onClick = { selectedState = state }
+                                selected = selectedState == stateKey,
+                                onClick = { selectedState = stateKey }
                             )
                             Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(state)
+                            Text(displayName)
                         }
                     }
                 }
@@ -456,7 +433,7 @@ fun RatingDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Otkaži")
+                Text("Otkazi")
             }
         }
     )
@@ -482,9 +459,9 @@ fun ReportDialog(
                     Text("Tip problema:", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     val problems = listOf(
-                        "Neprimeren sadržaj" to Icons.Default.Flag,
-                        "Netačna lokacija" to Icons.Default.WrongLocation,
-                        "Netačni podaci" to Icons.Default.BugReport,
+                        "Neprimeren sadrzaj" to Icons.Default.Flag,
+                        "Netacna lokacija" to Icons.Default.WrongLocation,
+                        "Netacni podaci" to Icons.Default.BugReport,
                         "Drugi problem" to Icons.Default.Help
                     )
                     problems.forEach { (problem, icon) ->
@@ -530,7 +507,7 @@ fun ReportDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Otkaži")
+                Text("Otkazi")
             }
         }
     )
@@ -570,7 +547,7 @@ fun InfoRow(icon: ImageVector, label: String, value: String) {
 private fun getTypeDisplayName(type: String): String {
     return when (type.uppercase()) {
         "BENCH" -> "Klupica"
-        "FOUNTAIN" -> "Česma"
+        "FOUNTAIN" -> "Cesma"
         "OTHER" -> "Ostalo"
         else -> type
     }
@@ -579,8 +556,8 @@ private fun getTypeDisplayName(type: String): String {
 @Composable
 private fun getColorByType(type: String): Color {
     return when (type.uppercase()) {
-        "BENCH" -> Color(0xFF8B4513) // braon
-        "FOUNTAIN" -> Color(0xFF1976D2) // plava
+        "BENCH" -> Color(0xFF8B4513)
+        "FOUNTAIN" -> Color(0xFF1976D2)
         else -> MaterialTheme.colorScheme.primary
     }
 }
@@ -623,11 +600,9 @@ private suspend fun saveRating(
             repository.updateObject(updatedObject)
             updatedObject
         } catch (e: Exception) {
-            println("Greška pri ažuriranju objekta: ${e.message}")
             appObject
         }
     } else {
-        println("Greška pri čuvanju interakcije: ${result.exceptionOrNull()?.message}")
         return appObject
     }
 }
@@ -645,13 +620,12 @@ private suspend fun saveReport(
         userId = currentUserId,
         type = Interaction.TYPE_REPORT,
         problemType = problemType,
-        comment = "Problem: $problemType\nOpis: $description",
+        comment = "Opis: $description",
         timestamp = System.currentTimeMillis(),
         pointsAwarded = 30
     )
 
     val result = repository.addInteraction(interaction)
     if (result.isFailure) {
-        println("Greška pri čuvanju prijave: ${result.exceptionOrNull()?.message}")
     }
 }

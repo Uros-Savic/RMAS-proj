@@ -21,16 +21,14 @@ data class AppObject(
         const val TYPE_FOUNTAIN = "FOUNTAIN"
 
         const val STATE_WORKING = "WORKING"
-        const val STATE_BROKEN = "BROKEN"
-        const val STATE_MISSING = "MISSING"
         const val STATE_DAMAGED = "DAMAGED"
-        const val STATE_MAINTENANCE = "MAINTENANCE"
+        const val STATE_BROKEN = "BROKEN"
     }
+
     fun getDisplayType(): String {
         return when (type) {
-            TYPE_BENCH -> "BENCH"
-            TYPE_FOUNTAIN -> "FOUNTAIN"
-
+            TYPE_BENCH -> "Klupa"
+            TYPE_FOUNTAIN -> "Cesma"
             else -> type
         }
     }
@@ -38,11 +36,9 @@ data class AppObject(
     fun getDisplayState(): String {
         return when (state) {
             STATE_WORKING -> "Ispravno"
-            STATE_BROKEN -> "Neispravno"
-            STATE_MISSING -> "Nedostaje"
-            STATE_DAMAGED -> "Oštećeno"
-            STATE_MAINTENANCE -> "Na održavanju"
-            else -> "Nepoznato stanje"
+            STATE_DAMAGED -> "Delimicno osteceno"
+            STATE_BROKEN -> "Neupotrebljivo"
+            else -> return this.state
         }
     }
 }

@@ -3,7 +3,6 @@ package com.example.rmas_uross.ui.pages.signup
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -61,8 +60,7 @@ fun SignupScreen(
 
                 selectedImageBitmap = bitmap
             } catch (e: Exception) {
-                Log.e("SignupScreen", "Error loading image", e)
-                errorMessage = "Greška pri učitavanju slike"
+                errorMessage = "Greska pri ucitavanju slike"
             }
         }
     }
@@ -70,7 +68,7 @@ fun SignupScreen(
         AlertDialog(
             onDismissRequest = { showImageSourceDialog = false },
             title = { Text("Izaberite izvor slike") },
-            text = { Text("Odakle želite da dodate profilnu sliku?") },
+            text = { Text("Odakle zelite da dodate profilnu sliku?") },
             confirmButton = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -103,7 +101,7 @@ fun SignupScreen(
                 TextButton(
                     onClick = { showImageSourceDialog = false }
                 ) {
-                    Text("Otkaži")
+                    Text("Otkazi")
                 }
             }
         )
@@ -186,7 +184,7 @@ fun SignupScreen(
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Korisničko ime") },
+                label = { Text("Korisnicko ime") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 isError = username.isBlank() && errorMessage != null
@@ -222,7 +220,7 @@ fun SignupScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Šifra") },
+                label = { Text("Sifra") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -232,7 +230,7 @@ fun SignupScreen(
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Potvrdi šifru") },
+                label = { Text("Potvrdi sifru") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -256,7 +254,7 @@ fun SignupScreen(
             onClick = {
                 when {
                     username.isBlank() -> {
-                        errorMessage = "Unesite korisničko ime"
+                        errorMessage = "Unesite korisnicko ime"
                         return@Button
                     }
                     fullName.isBlank() -> {
@@ -272,11 +270,11 @@ fun SignupScreen(
                         return@Button
                     }
                     password != confirmPassword -> {
-                        errorMessage = "Šifre se ne poklapaju"
+                        errorMessage = "Sifre se ne poklapaju"
                         return@Button
                     }
                     password.length < 6 -> {
-                        errorMessage = "Šifra mora imati najmanje 6 karaktera"
+                        errorMessage = "Sifra mora imati najmanje 6 karaktera"
                         return@Button
                     }
                 }
@@ -302,7 +300,7 @@ fun SignupScreen(
                             popUpTo(Route.login) { inclusive = true }
                         }
                     } else {
-                        errorMessage = authViewModel.errorMessage.value ?: "Registracija nije uspela. Pokušajte ponovo."
+                        errorMessage = authViewModel.errorMessage.value ?: "Registracija nije uspela. Pokusajte ponovo."
                     }
                 }
             },
@@ -333,7 +331,7 @@ fun SignupScreen(
                 }
             }
         ) {
-            Text("Već imate nalog? Prijavite se")
+            Text("Vec imate nalog? Prijavite se")
         }
     }
 }
@@ -375,7 +373,6 @@ private fun correctImageRotation(bitmap: Bitmap, context: android.content.Contex
         }
         bitmap
     } catch (e: Exception) {
-        Log.e("SignupScreen", "Error correcting image rotation", e)
         bitmap
     }
 }

@@ -35,7 +35,6 @@ class LeaderboardViewModel(
                         points = user.points.toInt(),
                         level = user.level,
                         rank = user.rank,
-                        experience = user.experience.toInt(),
                         fullName = user.fullName,
                         objectsAdded = user.objectsAdded,
                         reviewsWritten = user.reviewsWritten,
@@ -45,7 +44,7 @@ class LeaderboardViewModel(
 
                 _leaderboard.value = leaderboardData
             } catch (e: Exception) {
-                _error.value = "Greška pri učitavanju rang liste: ${e.message}"
+                _error.value = "Greska pri ucitavanju rang liste: ${e.message}"
                 _leaderboard.value = emptyList()
             } finally {
                 _isLoading.value = false
@@ -63,7 +62,6 @@ data class LeaderboardUser(
     val points: Int,
     val level: Int,
     val rank: String,
-    val experience: Int,
     val profileImage: String = "",
     val fullName: String = "",
     val objectsAdded: Int = 0,
@@ -72,11 +70,6 @@ data class LeaderboardUser(
 ) {
     fun getProgressToNextLevel(): Float {
         val experienceForNextLevel = level * 1000
-        return experience.toFloat() / experienceForNextLevel
-    }
-
-    fun getRemainingExperience(): Int {
-        val experienceForNextLevel = level * 1000
-        return maxOf(0, experienceForNextLevel - experience)
+        return points.toFloat() / experienceForNextLevel
     }
 }
