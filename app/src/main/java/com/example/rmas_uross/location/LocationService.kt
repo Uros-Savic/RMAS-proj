@@ -31,7 +31,6 @@ class LocationService(private val context: Context) {
 
     @SuppressLint("MissingPermission")
     val locationFlow: Flow<LatLng> = callbackFlow {
-        // Proveri da li je lokacija uključena pre nego što pokreneš
         if (!isLocationEnabled()) {
             close(Exception("Location services are disabled"))
             return@callbackFlow
@@ -58,7 +57,6 @@ class LocationService(private val context: Context) {
 
     @SuppressLint("MissingPermission")
     suspend fun getCurrentLocation(): Location? {
-        // Proveri da li je lokacija uključena
         if (!isLocationEnabled()) {
             return null
         }
