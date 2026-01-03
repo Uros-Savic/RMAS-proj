@@ -1,14 +1,10 @@
 package com.example.rmas_uross.worker
 
 import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.location.Location
 import android.location.LocationManager
-import android.os.Build
 import androidx.annotation.RequiresPermission
-import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.rmas_uross.data.repository.LocationRepository
@@ -25,11 +21,11 @@ class LocationCheckWorker(
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRepository: LocationRepository
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override suspend fun doWork(): Result {
         try {
-            // Proveri da li je lokacija uključena
             if (!isLocationEnabled()) {
-                return Result.failure() // Location is disabled
+                return Result.failure()
             }
 
             fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
@@ -37,10 +33,8 @@ class LocationCheckWorker(
 
             val userId = inputData.getString("userId") ?: return Result.failure()
 
-            // Pokušaj da dobiješ trenutnu lokaciju
             val location = getCurrentLocation()
             location?.let {
-                // Sačuvaj lokaciju u Firestore
                 locationRepository.saveUserLocation(
                     userId = userId,
                     latitude = it.latitude,

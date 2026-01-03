@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
-import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.ActivityCompat
@@ -54,11 +53,9 @@ class LocationTrackingService : Service() {
         when (intent?.action) {
             ACTION_START -> {
                 userId = intent.getStringExtra(EXTRA_USER_ID)
-                // Proveri da li je lokacija uključena pre nego što pokreneš
                 if (isLocationEnabled()) {
                     startLocationUpdates()
                 } else {
-                    // Ako lokacija nije uključena, zaustavi servis
                     stopSelf()
                 }
             }
