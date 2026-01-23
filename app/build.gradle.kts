@@ -22,7 +22,7 @@ android {
             useSupportLibrary = true
         }
 
-        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = "AIzaSyA-vLt_B-a_dcOvobLJkr4PG9sli5uYifw"
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = "_______________________"
     }
 
     buildTypes {
